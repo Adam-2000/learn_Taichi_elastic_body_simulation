@@ -101,12 +101,12 @@ def substep1(iter_i):
         F[c][0, 0], F[c][0, 1] = X[0, 0], X[0, 1]
         F[c][1, 0], F[c][1, 1] = X[1, 0], X[1, 1]
         F[c] /= X[2, 2]
-        M_buffer[c] = F[c].transpose() @ F[c]
+        M_buffer[c] = F[c].transpose() @ F[c] * ti.Matrix.determinant(F[c])
         M_buffer[c] = .5 * (M_buffer[c] - ti.Matrix.identity(ti.f32, 2))
         M_buffer[c] = 2 * miu_S[None] * M_buffer[c] + lambda_S[None] * M_buffer[c].trace() * ti.Matrix.identity(ti.f32, 2)
         M_buffer[c] = F[c] @ M_buffer[c]
         for j in ti.static(range(3)):
-            fk[iter_i, triangles[c, j]] += 0.5 * M_buffer[c] @ area_vectors[c, j]
+            fk[iter_i, triangles[c, j]] += 0.5 * M_buffer[c] @ area_vectors[c, j] * ti.Matrix.determinant(F[c])
 
     n = num_particles[None]
     # Compute force
@@ -232,7 +232,7 @@ def main():
     drag_damping[None] = 1
     dashpot_damping[None] = 0.2
     num_triangles[None] = 0
-    Epsilon_Y = 100.0
+    Epsilon_Y = 40.0
     niu_P = 0.2
     generate_obj()
     frame = 0
