@@ -19,7 +19,6 @@ lambda_S = ti.field(dtype=ti.f32, shape=())
 
 max_num_particles = 1024
 max_num_triangles = 1024
-particle_mass = 1.0
 dt = 1e-3
 substeps = 10
 
@@ -46,8 +45,7 @@ connected = ti.field(dtype=ti.i32, shape=(max_num_particles, max_num_particles))
 def build_triangle(a, b, c):
     v1 = ti.Vector([x[b][0]-x[a][0], x[b][1]-x[a][1], 0])
     v2 = ti.Vector([x[c][0]-x[a][0], x[c][1]-x[a][1], 0])
-    idx = num_triangles[None]
-    num_triangles[None] += 1
+    idx = ti.atomic_add(num_triangles[None], 1)
     v_cross = tm.cross(v1, v2)
     volumns[idx] = 0.5 * v_cross.norm()
     if v_cross[2] >= 0:
@@ -248,6 +246,7 @@ def main():
                 new_particle(e.pos[0], e.pos[1], int(gui.is_pressed(ti.GUI.SHIFT)))
             elif e.key == "c":
                 num_particles[None] = 0
+                num_triangles[None] = 0
                 connected.fill(0)
                 generate_obj()
             elif e.key == "x":
